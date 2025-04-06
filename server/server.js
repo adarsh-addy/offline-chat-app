@@ -14,9 +14,14 @@ const app = express();
 const server = http.createServer(app);
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:5173', // dev frontend
+  'https://chat-app-weld-tau.vercel.app' // deployed frontend
+];
+
 app.use(cors({
-  origin: 'https://your-react-app-url.onrender.com',
-  credentials: true,
+  origin: allowedOrigins,
+  credentials: true
 }));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
