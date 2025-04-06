@@ -14,7 +14,10 @@ const app = express();
 const server = http.createServer(app);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://your-react-app-url.onrender.com',
+  credentials: true,
+}));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
