@@ -5,7 +5,7 @@ import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState('');
-  const [name, setName] = useState(''); // only used for registration
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
@@ -13,9 +13,10 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const baseURL = import.meta.env.VITE_API_URL.replace(/\/$/, ''); // ✅ remove trailing slash
     const endpoint = isLogin
-      ? `${import.meta.env.VITE_API_URL}/api/auth/login`
-      : `${import.meta.env.VITE_API_URL}/api/auth/register`;
+      ? `${baseURL}/api/auth/login`
+      : `${baseURL}/api/auth/register`;
 
     const payload = isLogin
       ? { email, password }
@@ -25,20 +26,18 @@ const Login = () => {
       const res = await axios.post(endpoint, payload);
       const user = res.data.user;
 
-      // Save user to localStorage
       localStorage.setItem('user', JSON.stringify(user));
-
-      // Navigate to chat
       navigate('/chat');
     } catch (err) {
       console.error(err.response?.data?.msg || 'Something went wrong');
-      alert(err.response?.data?.msg || 'Error logging in');
+      alert(err.response?.data?.msg || 'Login/Register failed');
     }
   };
 
   return (
     <div style={styles.container}>
       <h2>{isLogin ? 'Login' : 'Register'}</h2>
+
       {!isLogin && (
         <input
           type="text"
@@ -48,6 +47,7 @@ const Login = () => {
           style={styles.input}
         />
       )}
+
       <input
         type="email"
         placeholder="Email"
@@ -55,6 +55,7 @@ const Login = () => {
         onChange={(e) => setEmail(e.target.value)}
         style={styles.input}
       />
+
       <input
         type="password"
         placeholder="Password"
@@ -62,10 +63,12 @@ const Login = () => {
         onChange={(e) => setPassword(e.target.value)}
         style={styles.input}
       />
+
       <button onClick={handleSubmit} style={styles.button}>
         {isLogin ? 'Login' : 'Register'}
       </button>
-      <p onClick={() => setIsLogin(!isLogin)} style={{ cursor: 'pointer', marginTop: '10px' }}>
+
+      <p onClick={() => setIsLogin(!isLogin)} style={styles.switch}>
         {isLogin ? "Don't have an account? Register" : 'Already have an account? Login'}
       </p>
     </div>
@@ -97,6 +100,11 @@ const styles = {
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
+  },
+  switch: {
+    cursor: 'pointer',
+    marginTop: '10px',
+    color: '#007bff',
   },
 };
 
