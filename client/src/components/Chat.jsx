@@ -4,9 +4,12 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 import debounce from 'lodash.debounce';
 
-const socket = io('http://localhost:5000', {
-  reconnection: true,
-  reconnectionAttempts: 5,
+const API = import.meta.env.VITE_API_URL;
+
+// ✅ Force WebSocket transport to fix CORS/polling issue
+const socket = io(API, {
+  transports: ["websocket"],
+  withCredentials: true,
 });
 
 const Chat = () => {
@@ -43,7 +46,7 @@ const Chat = () => {
     if (!user) return window.location.href = '/';
     setCurrentUser(user);
 
-    axios.get('http://localhost:5000/api/auth/users')
+    axios.get(`${API}/api/auth/users`)
       .then(res => setAllUsers(res.data.users))
       .catch(console.error);
   }, []);
@@ -55,7 +58,11 @@ const Chat = () => {
 
     socket.on('receiveMessage', (data) => {
       if (data.senderId === selectedUser?._id) {
-        setMessages((prev) => [...prev, { sender: data.senderId, content: data.message, timestamp: data.timestamp || new Date() }]);
+        setMessages((prev) => [...prev, {
+          sender: data.senderId,
+          content: data.message,
+          timestamp: data.timestamp || new Date()
+        }]);
       }
     });
 
@@ -74,6 +81,10 @@ const Chat = () => {
       if (currentUser) socket.emit('join', currentUser._id);
     });
 
+    socket.on("connect_error", (err) => {
+      console.error("⚠️ Socket connection error:", err.message);
+    });
+
     return () => {
       socket.off('receiveMessage');
       socket.off('online-users');
@@ -85,7 +96,7 @@ const Chat = () => {
   const fetchMessages = async (user2) => {
     if (!currentUser) return;
     try {
-      const res = await axios.get(`http://localhost:5000/api/messages/${currentUser._id}/${user2._id}`);
+      const res = await axios.get(`${API}/api/messages/${currentUser._id}/${user2._id}`);
       setMessages(res.data.messages || []);
     } catch (err) {
       console.error('Failed to fetch messages:', err);
@@ -93,10 +104,9 @@ const Chat = () => {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSend = useCallback(debounce(async (message) => {
     try {
-      await axios.post('http://localhost:5000/api/messages', {
+      await axios.post(`${API}/api/messages`, {
         sender: currentUser._id,
         receiver: selectedUser._id,
         content: message
@@ -107,7 +117,11 @@ const Chat = () => {
         message: message,
         timestamp: new Date()
       });
-      setMessages((prev) => [...prev, { sender: currentUser._id, content: message, timestamp: new Date() }]);
+      setMessages((prev) => [...prev, {
+        sender: currentUser._id,
+        content: message,
+        timestamp: new Date()
+      }]);
     } catch (err) {
       console.error(err);
     }

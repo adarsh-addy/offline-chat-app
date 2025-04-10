@@ -7,70 +7,79 @@ const messageRoutes = require('./routes/messageRoutes');
 const http = require('http');
 const { Server } = require('socket.io');
 
-// Init
+// Load environment variables and DB
 dotenv.config();
 connectDB();
+
 const app = express();
 const server = http.createServer(app);
 
-// Middleware
+// --- CORS Setup ---
 const allowedOrigins = [
-  'http://localhost:5173', // dev frontend
-  'https://chat-app-weld-tau.vercel.app' // deployed frontend
+  'http://localhost:5173',
+  'https://chat-app-weld-tau.vercel.app',
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
 }));
+
+// --- JSON Parser ---
 app.use(express.json());
+
+// --- API Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 
-// Routes
-app.get('/', (req, res) => res.send('API Running...'));
+// --- Health Check Route ---
+app.get('/', (req, res) => res.send('✅ API Running...'));
 
-// --- 🔌 SOCKET.IO Setup ---
-const onlineUsers = new Map(); // userId -> socketId
-
+// --- Socket.IO Setup ---
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
     credentials: true,
   },
 });
 
+const onlineUsers = new Map();
+
 io.on('connection', (socket) => {
-  console.log(`⚡ A user connected: ${socket.id}`);
+  console.log(`⚡ User connected: ${socket.id}`);
 
   socket.on('join', (userId) => {
     if (!userId) return;
     onlineUsers.set(userId, socket.id);
     socket.join(userId);
-    console.log(`✅ User ${userId} joined. Total: ${onlineUsers.size}`);
-    
-    // Emit the updated online users list to all clients
+    console.log(`✅ ${userId} joined. Online count: ${onlineUsers.size}`);
     io.emit('online-users', Array.from(onlineUsers.keys()));
   });
 
   socket.on('sendMessage', ({ senderId, receiverId, message }) => {
-    console.log(`📩 ${senderId} sent: "${message}" to ${receiverId}`);
+    console.log(`📩 ${senderId} -> ${receiverId}: ${message}`);
     socket.to(receiverId).emit('receiveMessage', { senderId, message });
   });
 
   socket.on('disconnect', () => {
-    let disconnectedUser = null;
-
-    for (let [userId, sId] of onlineUsers.entries()) {
+    let userLeft = null;
+    for (const [userId, sId] of onlineUsers.entries()) {
       if (sId === socket.id) {
-        disconnectedUser = userId;
+        userLeft = userId;
         onlineUsers.delete(userId);
         break;
       }
     }
 
-    if (disconnectedUser) {
-      console.log(`❌ User ${disconnectedUser} went offline`);
+    if (userLeft) {
+      console.log(`❌ ${userLeft} disconnected`);
       io.emit('online-users', Array.from(onlineUsers.keys()));
     } else {
       console.log(`❌ Unknown socket disconnected: ${socket.id}`);
@@ -78,8 +87,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// --- Server Listen ---
+// --- Start Server ---
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () =>
-  console.log(`🚀 Server + Socket.IO running on port ${PORT}`)
-);
+server.listen(PORT, () => {
+  console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
+});
