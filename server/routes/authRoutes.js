@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { register, login } = require('../controllers/authController'); // ✅ updated spelling
+const { register, login } = require('../controllers/authController'); // ✅ fixed typo
 
 const User = require('../models/User');
 
