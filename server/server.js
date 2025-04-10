@@ -17,7 +17,7 @@ const server = http.createServer(app);
 // --- CORS Setup ---
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://offline-chat-app-seven.vercel.app', // ✅ NEW frontend domain
+  'https://offline-chat-app-seven.vercel.app',
 ];
 
 app.use(cors({
@@ -49,7 +49,9 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
-  transports: ['websocket', 'polling'], // ✅ Polling fallback
+  transports: ['websocket', 'polling'],
+  pingTimeout: 30000, // Time to wait for pong before disconnecting
+  pingInterval: 10000, // Interval between pings
 });
 
 const onlineUsers = new Map();
@@ -82,3 +84,15 @@ io.on('connection', (socket) => {
 
     if (userLeft) {
       console.log(`❌ ${userLeft} disconnected`);
+      io.emit('online-users', Array.from(onlineUsers.keys()));
+    } else {
+      console.log(`❌ Unknown socket disconnected: ${socket.id}`);
+    }
+  });
+});
+
+// --- Start Server ---
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
+});
