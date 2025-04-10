@@ -13,10 +13,10 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const baseURL = import.meta.env.VITE_API_URL.replace(/\/$/, ''); // ✅ remove trailing slash
-    const endpoint = isLogin
-      ? `${baseURL}/api/auth/login`
-      : `${baseURL}/api/auth/register`;
+    const baseURL = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+const endpoint = isLogin
+  ? `${baseURL}/api/auth/login`
+  : `${baseURL}/api/auth/register`;
 
     const payload = isLogin
       ? { email, password }
