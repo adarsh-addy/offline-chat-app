@@ -7,7 +7,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const http = require('http');
 const { Server } = require('socket.io');
 
-// Load environment variables and DB
+// Load environment variables and connect DB
 dotenv.config();
 connectDB();
 
@@ -17,7 +17,7 @@ const server = http.createServer(app);
 // --- CORS Setup ---
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://chat-app-weld-tau.vercel.app',
+  'https://offline-chat-app-seven.vercel.app', // ✅ NEW frontend domain
 ];
 
 app.use(cors({
@@ -25,6 +25,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error(`❌ CORS BLOCKED: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -48,7 +49,7 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
-  transports: ['websocket', 'polling'], // ✅ This line ensures fallback to polling
+  transports: ['websocket', 'polling'], // ✅ Polling fallback
 });
 
 const onlineUsers = new Map();
@@ -81,15 +82,3 @@ io.on('connection', (socket) => {
 
     if (userLeft) {
       console.log(`❌ ${userLeft} disconnected`);
-      io.emit('online-users', Array.from(onlineUsers.keys()));
-    } else {
-      console.log(`❌ Unknown socket disconnected: ${socket.id}`);
-    }
-  });
-});
-
-// --- Start Server ---
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
-});
