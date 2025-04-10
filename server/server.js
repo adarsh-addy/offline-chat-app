@@ -48,6 +48,7 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
+  transports: ['websocket', 'polling'], // ✅ This line ensures fallback to polling
 });
 
 const onlineUsers = new Map();

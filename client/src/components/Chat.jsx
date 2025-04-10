@@ -8,10 +8,11 @@ const API = import.meta.env.VITE_API_URL;
 
 // ✅ Force WebSocket transport to fix CORS/polling issue
 const socket = io(API, {
-  transports: ["websocket"],
+  transports: ['websocket', 'polling'], // fallback if websocket fails
+  withCredentials: true,
+  reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 2000,
-  withCredentials: true,
 });
 
 const Chat = () => {
