@@ -44,10 +44,10 @@ app.get('/', (req, res) => res.send('✅ API Running...'));
 
 // --- Socket.IO Setup ---
 const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true,
+  cors:{
+    origin: "https://chat-app-c4766.web.app",  // your frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   },
   transports: ['websocket', 'polling'],
   pingTimeout: 30000, // Time to wait for pong before disconnecting
